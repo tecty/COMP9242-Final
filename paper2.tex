@@ -1,0 +1,72 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath,amsthm} 
+\usepackage{amsfonts} 
+\usepackage{pdfpages}
+
+\begin{document}
+
+\title{COMP9242 Paper 2 Review}
+\author{Z5141448}
+
+\maketitle
+
+\section{Summary}
+
+This paper talks about the performance issue of using Huge Page in the Linux and trying to address that with a new method. The Huge Page mechanism is to reduce the Translation Look-aside Buffer (TLB) misses to increase the performance. While using TLB, there's a new problem of memory bloating and low utilization of huge pages. So the huge must be split and re-merge together in some scenario. 
+
+The traditional method in Linux is using the access bit in the Page Table Entry (PTE) and sampling overhead will achieve 6 seconds as claimed. The new method will use the TLB misses by using SysMon-H with a shadowed array to record the TLB misses address at run-time which reduce the overhead. 
+
+Also the paper introduce the H-Policy which delays the splitting and merging of Huge Page and small page to improve the performance. The H-Policy will use the data provided by SysMon-H and a sorted Huge page tree (H-Tree) to improve the lookup of cold page and split them. 
+
+\section{Pros}
+
+\begin{itemize}
+    \item There's a potential speed up if the mechanism is well implemented
+    \item The paper is very concise 
+\end{itemize}
+
+\section{Cons}
+
+\begin{itemize}
+    \item The benchmark has no further information, potential benchmark crime
+    \item Key assumption is not addressed
+    \item Unable to reproduce their work
+\end{itemize}
+
+
+\section{Criticism of the work}
+
+\subsection{Trustworthiness of the Paper}
+
+Firstly, it's potential a Benchmark Crime. It said "overhead achieves 6 seconds in a specific sampling window" which has not specify how long the sampling window, standard deviation and in what trigger the system to frequently checking the access-bit. When I first see the 6 seconds, I shocked, but after I review the statement, I found it's not that trusted. Also, the overhead of 2.3\% and vs 0.1\% in new method has not further clarification. \\
+Secondly, it claimed the H-Page will reduce the access time, which is true, but it doesn't reduce that much, the overall sorting complexity of sort tree and an array are both O(NLogN). \\
+Thirdly, the TLB misses record only assess 5 second for a period while the access-bit is continually recorded which will make SysMon-H method has some advantage. If  the TLB misses is record continually, it may not have performance improvement. \\
+Fourthly, the citation is highly irrelevant, for example 22, 27, 2... and use Wikipedia in citation such as 5 and 6. \\
+Last but not least, I couldn't find any material about the basic component of SysMon-H, H-Policy and H-Tree mentioned in the article which means there's no way for any others to reproduce their work. 
+
+\subsection{Missing Support for Key Assumption}
+
+There's a hidden assumption "hot pages usually incur a large number of TLB misses", I feel the statement is true, but there's not further clarification or any numbers to support this statement while the whole article is build on top of this statement. It's trivial to compare the access-bit in the hot region as they can open both the feature. After all, they are two different kind of things, if the author want to use one instead of others, it's better to have a good reason.
+
+\subsection{Not Deep Enough Analyze}
+
+The article address the problem with high memory intensive program, there are discrete use of memory and usually doesn't need the THP \cite{mongoDb}. Maybe for those application in the real world just need to open the Huge Page and no merging which will give better performance. Because there's not need to dynamically compact the pages which will hurt performance badly. Also the splitting of Huge Page will cause more TLB misses which will lead to that page unable to merge back together? 
+
+There's missing performance analyze of H-Policy vs original THP policy. There should be a comparison between the new method and old method. The lazy splitting should have some benefit of performance but maybe not that promising. As my point of view, there's not technical advance in H-Policy so the improvement may be little.
+
+\subsection{Shadow Array Issue}
+
+What's the implementation of shadow array, how can it hold all the TLB fault address in the examine period while not hurting the performance. If the array is running out, what will happened? There's no information about this issue. 
+
+\section{Points that Must be Addressed if Accepted}
+
+"hot pages usually incur a large number of TLB misses" and the relationship between the access bit and the TLB misses.
+The perfoamance of H-Policy vs original THP policy.
+More information about SysMon-H and shadow array been used. 
+
+\begin{thebibliography}{9}
+\bibitem{mongoDb} 
+Disable Transparent Huge Pages (THP) — MongoDB Manual
+\\\texttt{https://docs.mongodb.com/manual/tutorial/\\transparent-huge-pages/}
+\end{document}
